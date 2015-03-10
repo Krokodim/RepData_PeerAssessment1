@@ -1,4 +1,5 @@
 # Reproducible Research: Peer Assessment 1
+<<<<<<< HEAD
 <tt>
 [repdate-012](https://www.coursera.org/course/repdata) /
 [Dmitry B. Grekov](mailto:dmitry.grekov@gmail.com) / March 2015
@@ -48,3 +49,24 @@ dt.raw <- read.csv("activity.csv")
 
 
 ### Are there differences in activity patterns between weekdays and weekends?
+=======
+
+
+## Loading and preprocessing the data
+
+
+
+## What is mean total number of steps taken per day?
+
+
+
+## What is the average daily activity pattern?
+
+
+
+## Imputing missing values
+
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+>>>>>>> b12262575d6ff34b39a584bb0960babcaa07f2a9

@@ -18,6 +18,7 @@ suppressPackageStartupMessages( {
   }
 )
 
+<<<<<<< HEAD
 ```
 If some of these packages are missing, you have to install them using <code>install.packages()</code> function.  
 
@@ -32,6 +33,14 @@ if (!file.exists("activity.csv")) {
   file.res <- download.file(file.url, file.tmp, quiet=TRUE)
   file.csv <- unzip(file.tmp, overwrite=TRUE)
 }
+=======
+## Loading and preprocessing the data
+```{r}
+file.url <-"https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+file.tmp <- tempfile(pattern="activity")
+file.res <- download.file(file.url, file.tmp, method="internal", quiet=TRUE)
+file.csv <- unzip(file.tmp, overwrite=TRUE)
+>>>>>>> b12262575d6ff34b39a584bb0960babcaa07f2a9
 ```
 
 The raw data from the file is then read into the <code>dt.raw</code> variable:
