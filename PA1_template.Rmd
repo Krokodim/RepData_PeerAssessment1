@@ -7,8 +7,12 @@ output:
 
 
 ## Loading and preprocessing the data
-
-
+```{r}
+file.url <-"https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+file.tmp <- tempfile(pattern="activity")
+file.res <- download.file(file.url, file.tmp, method="internal", quiet=TRUE)
+file.csv <- unzip(file.tmp, overwrite=TRUE)
+```
 
 ## What is mean total number of steps taken per day?
 
