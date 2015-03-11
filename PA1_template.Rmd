@@ -71,8 +71,25 @@ Here's a histogram fo the daily totals:
 Mean total number of steps per day equals **`r q1_mean`**, median equals **`r q1_median`**.
 
 ### What is the average daily activity pattern?
+In order to determine the daily activity pattern we have to we have to calculate the mean total steps over all teh dates grouped by time interval:
+
+```{r}
+dt.timely.total <- dt.raw         %>%
+  na.omit()                       %>%
+  group_by(interval)              %>%
+  summarise(value=sum(steps))     %>%
+  select(interval,value)                
+
+str(dt.timely.total)
+```
 
 
+Here we build the plot:
+```{r}
+  ggplot(dt.timely.total, aes(x=interval, y=value)) +
+    geom_line() +
+    geom_smooth(method="lowess")
+```
 
 ### Imputing missing values
 
