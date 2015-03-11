@@ -4,27 +4,34 @@ output:
   html_document:
     keep_md: true
 ---
-<tt>
+
 [repdate-012](https://www.coursera.org/course/repdata) /
-[Dmitry B. Grekov](mailto:dmitry.grekov@gmail.com) / March 2015
-</tt>
+[Dmitry B. Grekov](mailto:dmitry.grekov@gmail.com) /
+`r Sys.Date()`
+
 
 ### Packages 
-The following packages are required to reproduce this research:
-```{r}
-suppressPackageStartupMessages( {
-  library(dplyr)
-  library(data.table)
-  }
-)
-```
+The following packages were used during this research and are required to reproduce it:  
+
+- `dplyr` - a Grammar of data manipulation
+- `ggplot2` - an implementation of the Grammar of Graphics
+
 If some of these packages are missing, you have to install them using <code>install.packages()</code> function.  
 
+```{r libs, echo=FALSE, results="hide"}
+  suppressPackageStartupMessages(
+    {
+      library(dplyr)
+      library(ggplot2)
+    }
+  )
+```
+
 ### Loading and preprocessing the data
-If the file doesn't exist in the current directory, we download it from the original location:  
+If the `activity.csv` file doesn't exist in the current directory, we download the archive from the original location on the WEB, unzip and store the file to the working directory.  
   - Dataset: [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip) [~52K]  
 
-```{r}
+```{r file.load, echo=FALSE, results='hide'}
 if (!file.exists("activity.csv")) {
   file.url <-"http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
   file.tmp <- tempfile(pattern="activity")
@@ -33,13 +40,35 @@ if (!file.exists("activity.csv")) {
 }
 ```
 
-The raw data from the file is then read into the <code>dt.raw</code> variable:
-```{r}
+The raw data from the file is then read into the `dt.raw` variable:
+```{r file.read}
 dt.raw <- read.csv("activity.csv") 
+dt.raw$date <- as.Date(dt.raw$date)
 ```
+
 ### What is mean total number of steps taken per day?
+In order to answer this question we need to aggregate the data by `date` and calculate total number of steps per day. Then we calculate total number of steps per day and exclude `NA` values.
 
+```{r}
+dt.daily.total <- dt.raw        %>%
+  group_by(date)                %>%
+  summarise(value=sum(steps))   %>%
+  select(date,value)            %>%
+  na.omit()         
+```
 
+Here's a histogram fo the daily totals:  
+```{r q1_hist, fig.width=6,echo=FALSE }
+  ggplot(dt.daily.total, aes(x=value)) +
+  geom_histogram(binwidth=2000, fill="steelblue", color="white", alpha=.7) 
+```
+
+```{r q1_vars,echo=FALSE}
+  q1_mean   <- sprintf("%.2f",mean(dt.daily.total$value))
+  q1_median <- median(dt.daily.total$value)
+```
+
+Mean total number of steps per day equals **`r q1_mean`**, median equals **`r q1_median`**.
 
 ### What is the average daily activity pattern?
 
