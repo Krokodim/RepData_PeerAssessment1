@@ -2,22 +2,31 @@
 
 [repdate-012](https://www.coursera.org/course/repdata) /
 [Dmitry B. Grekov](mailto:dmitry.grekov@gmail.com) /
-2015-03-11
+2015-03-12
 
 
 ### Packages 
 The following packages were used during this research and are required to reproduce it:  
 
 - `dplyr` - a Grammar of data manipulation
+- `lubridate` - make dealing with dates a little easier
 - `ggplot2` - an implementation of the Grammar of Graphics
 
 If some of these packages are missing, you have to install them using <code>install.packages()</code> function.  
 
 
+```r
+  suppressPackageStartupMessages(
+    {
+      library(dplyr)
+      library(lubridate)
+      library(ggplot2)
+    }
+  )
+```
 
 ### Loading and preprocessing the data
-If the `activity.csv` file doesn't exist in the current directory, we download the archive from the original location on the WEB, unzip and store the file to the working directory.  
-  - Dataset: [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip) [~52K]  
+<small>**Sidenote.** If the <tt>activity.csv</tt> file doesn't exist in the current directory, we download the archive from the original location on the WEB, unzip and store the file to the working directory. As the assignment instructions say that we may assume that the file is already in the working directory, this is done behind the curtain by an invisible R script.</small>
 
 
 
@@ -73,11 +82,15 @@ Here we build the plot:
 
 ```r
   ggplot(dt.timely.total, aes(x=interval, y=value)) +
-    geom_line() +
-    geom_smooth(method="lowess")
+    geom_point() +
+    geom_smooth()
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-3-1.png) 
+```
+## geom_smooth: method="auto" and size of largest group is <1000, so using loess. Use 'method = x' to change the smoothing method.
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png) 
 
 ### Imputing missing values
 

@@ -14,22 +14,23 @@ output:
 The following packages were used during this research and are required to reproduce it:  
 
 - `dplyr` - a Grammar of data manipulation
+- `lubridate` - make dealing with dates a little easier
 - `ggplot2` - an implementation of the Grammar of Graphics
 
 If some of these packages are missing, you have to install them using <code>install.packages()</code> function.  
 
-```{r libs, echo=FALSE, results="hide"}
+```{r libs, echo=TRUE, results="hide"}
   suppressPackageStartupMessages(
     {
       library(dplyr)
+      library(lubridate)
       library(ggplot2)
     }
   )
 ```
 
 ### Loading and preprocessing the data
-If the `activity.csv` file doesn't exist in the current directory, we download the archive from the original location on the WEB, unzip and store the file to the working directory.  
-  - Dataset: [Activity monitoring data](https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip) [~52K]  
+<small>**Sidenote.** If the <tt>activity.csv</tt> file doesn't exist in the current directory, we download the archive from the original location on the WEB, unzip and store the file to the working directory. As the assignment instructions say that we may assume that the file is already in the working directory, this is done behind the curtain by an invisible R script.</small>
 
 ```{r file.load, echo=FALSE, results='hide'}
 if (!file.exists("activity.csv")) {
@@ -49,7 +50,7 @@ dt.raw$date <- as.Date(dt.raw$date)
 ### What is mean total number of steps taken per day?
 In order to answer this question we need to aggregate the data by `date` and calculate total number of steps per day. Then we calculate total number of steps per day and exclude `NA` values.
 
-```{r}
+```{r q1_data}
 dt.daily.total <- dt.raw        %>%
   group_by(date)                %>%
   summarise(value=sum(steps))   %>%
@@ -87,8 +88,8 @@ str(dt.timely.total)
 Here we build the plot:
 ```{r}
   ggplot(dt.timely.total, aes(x=interval, y=value)) +
-    geom_line() +
-    geom_smooth(method="lowess")
+    geom_point() +
+    geom_smooth()
 ```
 
 ### Imputing missing values
