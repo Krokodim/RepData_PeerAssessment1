@@ -30,26 +30,34 @@ If some of these packages are missing, you have to install them using <code>inst
 
 
 
-The raw data from the file is then read into the `dt.raw` variable:
+The raw data from the file is then read into the `dt` variable:
 
 ```r
-dt.raw <- read.csv("activity.csv") 
-dt.raw$date <- as.Date(dt.raw$date)
+dt <-read.csv("activity.csv", stringsAsFactors=FALSE) %>%
+  mutate(
+      interval      = sprintf("%04d", interval),
+      char.datetime = sprintf("%s %s", date, interval),
+      datetime      = ymd_hm(char.datetime),
+      hour          = sprintf("%02d", hour(datetime))
+    )                                                 %>%
+  select (date, interval, hour, steps)
 ```
+
+
 
 ### What is mean total number of steps taken per day?
 In order to answer this question we need to aggregate the data by `date` and calculate total number of steps per day. Then we calculate total number of steps per day and exclude `NA` values.
 
 
 ```r
-dt.daily.total <- dt.raw        %>%
+dt.daily.total <- dt            %>%
   group_by(date)                %>%
   summarise(value=sum(steps))   %>%
   select(date,value)            %>%
   na.omit()         
 ```
 
-Here's a histogram fo the daily totals:  
+Here's a histogram for the daily totals:  
 ![](PA1_template_files/figure-html/q1_hist-1.png) 
 
 
@@ -61,36 +69,23 @@ In order to determine the daily activity pattern we have to we have to calculate
 
 
 ```r
-dt.timely.total <- dt.raw         %>%
+dt.timely.total <- dt             %>%
   na.omit()                       %>%
-  group_by(interval)              %>%
+  group_by(hour)                  %>%
   summarise(value=sum(steps))     %>%
-  select(interval,value)                
-
-str(dt.timely.total)
-```
-
-```
-## Classes 'tbl_df', 'tbl' and 'data.frame':	288 obs. of  2 variables:
-##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
-##  $ value   : int  91 18 7 8 4 111 28 46 0 78 ...
-##  - attr(*, "drop")= logi TRUE
+  select(hour,value)                
 ```
 
 
 Here we build the plot:
 
 ```r
-  ggplot(dt.timely.total, aes(x=interval, y=value)) +
+  ggplot(dt.timely.total, aes(x=hour, y=value)) +
     geom_point() +
-    geom_smooth()
+    geom_smooth(aes(group=1),method="loess") 
 ```
 
-```
-## geom_smooth: method="auto" and size of largest group is <1000, so using loess. Use 'method = x' to change the smoothing method.
-```
-
-![](PA1_template_files/figure-html/unnamed-chunk-2-1.png) 
+![](PA1_template_files/figure-html/Q2_plot-1.png) 
 
 ### Imputing missing values
 
