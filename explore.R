@@ -16,7 +16,8 @@ dt <- mutate(
 
 dt <- mutate(
   dt,
-  hour     =    paste(substr(interval,1,2),"00", sep=":"),
+  hour     =    factor(paste(substr(interval,1,2),"00", sep=":")),
+  weekday  =    factor(wday(date, label=TRUE)),
   day.type =    factor(
     ifelse(wday(date) %in% 2:6, 1, 2), 
     levels = c(1,2),
@@ -25,25 +26,12 @@ dt <- mutate(
 )
 
 
-dt.timely <- dt                   %>%
-  na.omit()                       %>%
-  group_by(interval)              %>%
-  summarise(value=(mean(steps)/5))
+dt.imp <- dt                                                %>%
+  na.omit()                                                 %>%
+  group_by(weekday,interval)                                %>%
+  summarise(avg.value=mean(steps))                          %>%
+  inner_join(dt, by=c("interval", "weekday"))               %>%
+  transform(steps = ifelse(is.na(steps), avg.value, steps)))
 
-# construct the plot
-g2 <- ggplot(dt.timely, aes(x=interval, y=value, group=1), main="sd") +
-      labs(list(main="SSS"))
+dt2[is.na(dt2$steps),]
 
-# draw a line
-g2 <- g2 + geom_line(aes(group=1), lwd=2, color="darkgrey") 
-
-# adjust X-axis
-g2 <- g2 + xlab("Time interval") 
-g2 <- g2 + scale_x_discrete(breaks=unique(dt$hour)) 
-g2 <- g2 + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-# Y-axis adjustments
-g2 <- g2 + ylab("Mean number of steps per minute")
-
-# draw the plot
-print(g2)
