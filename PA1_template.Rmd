@@ -10,29 +10,44 @@ output:
 `r Sys.Date()`
 
 
-### Packages 
-The following packages were used during this research and are required to reproduce it:  
+```{r pre_libs, echo=FALSE, results="hide"}
+################################################################################
+#
+#  Hi!
+#
+#  These blocks of commands are executed behind the curtain despite the 
+#  explicit requirement to use echo=TRUE in the assignment instructions.  
+#
+#  Each block has its specific reason to be placed here, these reasons are
+#  explained below. 
+#
+#  Please pay attention that the research remains reproducible as all the 
+#  necessary code blocks remain in both .md and .html files.
+#
+#  Thanks for understanding!
+#
+################################################################################
 
-- `dplyr` - a Grammar of data manipulation
-- `lubridate` - make dealing with dates a little easier
-- `ggplot2` - an implementation of the Grammar of Graphics
+# BLOCK #1
+# Here we link the libraries suppressing all the startup and warning messages 
+# produced by the packages. When we link them again below, they won't produce
+# any undesirable output
+suppressWarnings(
+  {
+  suppressPackageStartupMessages( 
+      {
+        library(dplyr)
+        library(lubridate)
+        library(ggplot2)
+      }
+    )
+  }
+)
 
-If some of these packages are missing, you have to install them using <code>install.packages()</code> function.  
-
-```{r libs, echo=TRUE, results="hide"}
-  suppressPackageStartupMessages(
-    {
-      library(dplyr)
-      library(lubridate)
-      library(ggplot2)
-    }
-  )
-```
-
-### Loading and preprocessing the data
-<small>**Sidenote.** If the <tt>activity.csv</tt> file doesn't exist in the current directory, we download the archive from the original location on the WEB, unzip and store the file to the working directory. As the assignment instructions say that we may assume that the file is already in the working directory, this is done behind the curtain by an invisible R script.</small>
-
-```{r file.load, echo=FALSE, results='hide'}
+# BLOCK #2
+# Here we ensure that the 'actiity.csv' file exists in the working directory.
+# As the instructions clearly state that this is not necessary, we also do it 
+# behinf the curtain in order to allow the reader focusing on the research.
 if (!file.exists("activity.csv")) {
   file.url <-"http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
   file.tmp <- tempfile(pattern="activity")
@@ -41,52 +56,117 @@ if (!file.exists("activity.csv")) {
 }
 ```
 
-The raw data from the file is then read into the `dt` variable:
+
+
+## Packages 
+The following packages were used during this research and are required to reproduce it:  
+
+```{r libs, echo=TRUE}
+library(dplyr)      # a Grammar of data manipulation
+library(lubridate)  # make dealing with dates a little easier
+library(ggplot2)    # an implementation of the Grammar of Graphics
+```
+
+If some of these packages are missing, you have first to install them using <code>install.packages()</code> function.  
+
+
+## Loading and preprocessing the data
+The source data is stored int the `activity.csv` file in the working directory. If the file is missing by the time the script starts, it is donloaded from the WEB (this is done behind the curtain).  
+
+### Initial data reading  
+The raw data from the file is initially read into the `dt` variable:
 ```{r file.read}
-dt <-read.csv("activity.csv", stringsAsFactors=FALSE) %>%
-  mutate(
-      interval      = sprintf("%04d", interval),
-      char.datetime = sprintf("%s %s", date, interval),
-      datetime      = ymd_hm(char.datetime),
-      hour          = sprintf("%02d", hour(datetime))
-    )                                                 %>%
-  select (date, interval, hour, steps)
+dt <-read.csv("activity.csv", stringsAsFactors=FALSE)
+```
+
+As the data is read, our `dt` variable is a data.frame with the following three columns:
+
+- `steps` - an integer containing the number of steps made during the interval
+- `date` - the data of measurement in a character format (yyyy-mm-dd)
+- `interval` - an integer value denoting the 5-minute interval for the measurement <small>(the value 5 denotes to 00:05, 115 to 01:15AM, 1325 to 1:25PM (13:25) and so on)</small>
+
+### Data preprocessing
+
+First, we convert the `date` into `POSIXct` format:
+```{r convert_date}
+dt <- mutate(dt, date = ymd(date))
+```
+
+Next, we transform the `interval` into 24-hour 'hh:mm' form in order to add visibility and facilitate sorting:
+```{r convert_interval}
+dt <- mutate(
+        dt, 
+        #step 1 - make it 'hhmm'
+        interval = sprintf("%04d", interval),
+        #step 2 - split hours and minutes with a colon
+        interval = paste(substr(interval,1,2),substr(interval,3,4), sep=":")
+      )
+```
+
+We also add new variables 
+
+  - `hour` is the hour the interval belongs to, the format is `hh:00`
+  - `day.type` is a factor to distinguish betweeb weekdays (1) and weekends (2)
+
+```{r transform_hour_day.type}
+dt <- mutate(
+    dt,
+    hour     =    paste(substr(interval,1,2),"00", sep=":"),
+    day.type =    factor(
+                      ifelse(wday(date) %in% 2:6, 1, 2), 
+                      levels = c(1,2),
+                      labels = c("weekday","weekend")
+                    )
+  )
 ```
 
 
 
-### What is mean total number of steps taken per day?
+## What is mean total number of steps taken per day?
 In order to answer this question we need to aggregate the data by `date` and calculate total number of steps per day. Then we calculate total number of steps per day and exclude `NA` values.
 
 ```{r q1_data}
-dt.daily.total <- dt            %>%
-  group_by(date)                %>%
-  summarise(value=sum(steps))   %>%
-  select(date,value)            %>%
-  na.omit()         
+dt.daily <- dt                     %>%
+  na.omit()                        %>%
+  group_by(date)                   %>%
+  summarise(value=sum(steps))      
 ```
 
 Here's a histogram for the daily totals:  
-```{r q1_hist, fig.width=6,echo=FALSE }
-  ggplot(dt.daily.total, aes(x=value)) +
-  geom_histogram(binwidth=2000, fill="steelblue", color="white", alpha=.7) 
+```{r q1_hist, echo=TRUE, results='asis'}
+  # build the plot
+  g1 <- ggplot(dt.daily, aes(x=value)) 
+
+  # draw the histogram
+  g1 <- g1 + geom_histogram(binwidth=1000, fill="steelblue", color="transparent")
+  
+  # X-axis adjustments
+  g1 <- g1 + xlab("Number of steps per day") 
+  g1 <- g1 + scale_x_continuous(breaks=seq(0,21000, by=1000), limits=c(0,21000)) 
+  g1 <- g1 + theme(axis.text.x = element_text(angle=60, hjust= 1))
+
+  # Y-label adjustments
+  g1 <- g1 + ylab("Number of days")
+  g1 <- g1 + scale_y_continuous(breaks=0:30) 
+
+  print(g1)
 ```
 
 ```{r q1_vars,echo=FALSE}
-  q1_mean   <- sprintf("%.2f",mean(dt.daily.total$value))
-  q1_median <- median(dt.daily.total$value)
+  q1_mean   <- sprintf("%.2f",mean(dt.daily$value))
+  q1_median <- median(dt.daily$value)
 ```
 
 Mean total number of steps per day equals **`r q1_mean`**, median equals **`r q1_median`**.
 
-### What is the average daily activity pattern?
+## What is the average daily activity pattern?
 In order to determine the daily activity pattern we have to we have to calculate the mean total steps over all teh dates grouped by time interval:
 
 ```{r q2_data}
 dt.timely.total <- dt             %>%
   na.omit()                       %>%
   group_by(hour)                  %>%
-  summarise(value=sum(steps))     %>%
+  summarise(value=mean(steps))     %>%
   select(hour,value)                
 ```
 
@@ -95,11 +175,12 @@ Here we build the plot:
 ```{r Q2_plot}
   ggplot(dt.timely.total, aes(x=hour, y=value)) +
     geom_point() +
-    geom_smooth(aes(group=1),method="loess") 
+    geom_smooth(aes(group=1),method="loess") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
-### Imputing missing values
+## Imputing missing values
 
 
 
-### Are there differences in activity patterns between weekdays and weekends?
+## Are there differences in activity patterns between weekdays and weekends?
