@@ -2,93 +2,191 @@
 
 [repdate-012](https://www.coursera.org/course/repdata) /
 [Dmitry B. Grekov](mailto:dmitry.grekov@gmail.com) /
-2015-03-12
+2015-03-14
 
 
-### Packages 
+
+
+
+
+## Packages 
 The following packages were used during this research and are required to reproduce it:  
-
-- `dplyr` - a Grammar of data manipulation
-- `lubridate` - make dealing with dates a little easier
-- `ggplot2` - an implementation of the Grammar of Graphics
-
-If some of these packages are missing, you have to install them using <code>install.packages()</code> function.  
 
 
 ```r
-  suppressPackageStartupMessages(
-    {
-      library(dplyr)
-      library(lubridate)
-      library(ggplot2)
-    }
+library(dplyr)      # a Grammar of data manipulation
+library(lubridate)  # make dealing with dates a little easier
+library(ggplot2)    # an implementation of the Grammar of Graphics
+```
+
+If some of these packages are missing, you have first to install them using <code>install.packages()</code> function.  
+
+
+## Loading and preprocessing the data
+The source data is stored int the `activity.csv` file in the working directory. If the file is missing by the time the script starts, it is donloaded from the WEB (this is done behind the curtain).  
+
+### Initial data reading  
+The raw data from the file is initially read into the `dt` variable:
+
+```r
+dt <-read.csv("activity.csv", stringsAsFactors=FALSE)
+```
+
+As the data is read, our `dt` variable is a data.frame with the following three columns:
+
+- `steps` - an integer containing the number of steps made during the interval
+- `date` - the data of measurement in a character format (yyyy-mm-dd)
+- `interval` - an integer value denoting the 5-minute interval for the measurement <small>(the value 5 denotes to 00:05, 115 to 01:15AM, 1325 to 1:25PM (13:25) and so on)</small>
+
+### Data preprocessing
+
+First, we convert the `date` into `POSIXct` format:
+
+```r
+dt <- mutate(dt, date = ymd(date))
+```
+
+Next, we transform the `interval` into 24-hour 'hh:mm' form in order to add visibility and facilitate sorting:
+
+```r
+dt <- mutate(
+        dt, 
+        #step 1 - make it 'hhmm'
+        interval = sprintf("%04d", interval),
+        #step 2 - split hours and minutes with a colon
+        interval = paste(substr(interval,1,2),substr(interval,3,4), sep=":")
+      )
+```
+
+We also add new variables 
+
+  - `hour` is the hour the interval belongs to, the format is `hh:00`
+  - `day.type` is a factor to distinguish betweeb weekdays (1) and weekends (2)
+
+
+```r
+dt <- mutate(
+    dt,
+    hour     =    paste(substr(interval,1,2),"00", sep=":"),
+    day.type =    factor(
+                      ifelse(wday(date) %in% 2:6, 1, 2), 
+                      levels = c(1,2),
+                      labels = c("weekday","weekend")
+                    )
   )
 ```
 
-### Loading and preprocessing the data
-<small>**Sidenote.** If the <tt>activity.csv</tt> file doesn't exist in the current directory, we download the archive from the original location on the WEB, unzip and store the file to the working directory. As the assignment instructions say that we may assume that the file is already in the working directory, this is done behind the curtain by an invisible R script.</small>
-
-
-
-The raw data from the file is then read into the `dt` variable:
+So finally we have the following dataset:
 
 ```r
-dt <-read.csv("activity.csv", stringsAsFactors=FALSE) %>%
-  mutate(
-      interval      = sprintf("%04d", interval),
-      char.datetime = sprintf("%s %s", date, interval),
-      datetime      = ymd_hm(char.datetime),
-      hour          = sprintf("%02d", hour(datetime))
-    )                                                 %>%
-  select (date, interval, hour, steps)
+str(dt)
 ```
 
+```
+## 'data.frame':	17568 obs. of  5 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : POSIXct, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: chr  "00:00" "00:05" "00:10" "00:15" ...
+##  $ hour    : chr  "00:00" "00:00" "00:00" "00:00" ...
+##  $ day.type: Factor w/ 2 levels "weekday","weekend": 1 1 1 1 1 1 1 1 1 1 ...
+```
 
-
-### What is mean total number of steps taken per day?
-In order to answer this question we need to aggregate the data by `date` and calculate total number of steps per day. Then we calculate total number of steps per day and exclude `NA` values.
+## What is mean total number of steps taken per day?
+In order to answer this question we have to aggregate the data by date and calculate total number of steps per day. We will also exclude `NA` values during the transformation. The dataset for this question will be stored in the `dt.daily` variable: 
 
 
 ```r
-dt.daily.total <- dt            %>%
-  group_by(date)                %>%
-  summarise(value=sum(steps))   %>%
-  select(date,value)            %>%
-  na.omit()         
+dt.daily <- dt                     %>%
+  na.omit()                        %>%
+  group_by(date)                   %>%
+  summarise(value=sum(steps))      
 ```
 
-Here's a histogram for the daily totals:  
+Now let's build a histogram for the daily totals. We will use ggplot plotting system:
+
+```r
+# build the plot
+g1 <- ggplot(dt.daily, aes(x=value)) 
+
+# draw the histogram
+g1 <- g1 + geom_histogram(binwidth=1000, fill="steelblue", color="white", alpha=9/13)
+
+# X-axis adjustments
+g1 <- g1 + xlab("Number of steps per day") 
+g1 <- g1 + scale_x_continuous(breaks=seq(0,21000, by=1000), limits=c(0,21000)) 
+g1 <- g1 + theme(axis.text.x = element_text(angle=60, hjust= 1))
+
+# Y-axis adjustments
+g1 <- g1 + ylab("Number of days")
+g1 <- g1 + scale_y_continuous(breaks=0:30) 
+
+g1 <- g1 + labs(list(title="Mean total number of steps per day"))
+
+# draw the plot
+print(g1)
+```
+
 ![](PA1_template_files/figure-html/q1_hist-1.png) 
 
+The histogram shows that the mean total number of steps per day is about 10000-11000. If we calculate the value, we scan see that it is really so:
+
+```r
+mean(dt.daily$value)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
+median(dt.daily$value)
+```
+
+```
+## [1] 10765
+```
 
 
-Mean total number of steps per day equals **10766.19**, median equals **10765**.
 
-### What is the average daily activity pattern?
-In order to determine the daily activity pattern we have to we have to calculate the mean total steps over all teh dates grouped by time interval:
+## What is the average daily activity pattern?
+In order to determine the daily activity pattern we have to group the data by a time interval and calculate mean numer of steps for each interval. As each interval contains 5 minutes, we can calculte per minute values by dividing the mean by 5. Really, per minute values make more sence. We will store the data in `dt.timely` variable:
 
 
 ```r
-dt.timely.total <- dt             %>%
+dt.timely <- dt                   %>%
   na.omit()                       %>%
-  group_by(hour)                  %>%
-  summarise(value=sum(steps))     %>%
-  select(hour,value)                
+  group_by(interval)              %>%
+  summarise(value=mean(steps)/5)
 ```
 
 
-Here we build the plot:
+Now we can buid a plot showing the daily activity pattern:
 
 ```r
-  ggplot(dt.timely.total, aes(x=hour, y=value)) +
-    geom_point() +
-    geom_smooth(aes(group=1),method="loess") 
+# construct the plot
+g2 <- ggplot(dt.timely, aes(x=interval, y=value)) 
+
+# draw a line
+g2 <- g2 + geom_line(aes(group=1), color="steelblue", lwd=1) 
+
+# adjust X-axis
+g2 <- g2 + xlab("Time interval") 
+g2 <- g2 + scale_x_discrete(breaks=unique(dt$hour)) 
+g2 <- g2 + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+# Y-axis adjustments
+g2 <- g2 + ylab("Mean number of steps per minute")
+
+g2 <- g2 + labs(list(title="Average daily activity pattern"))
+
+# draw the plot
+print(g2)
 ```
 
-![](PA1_template_files/figure-html/Q2_plot-1.png) 
+![](PA1_template_files/figure-html/q2_plot-1.png) 
 
-### Imputing missing values
+## Imputing missing values
 
 
 
-### Are there differences in activity patterns between weekdays and weekends?
+## Are there differences in activity patterns between weekdays and weekends?

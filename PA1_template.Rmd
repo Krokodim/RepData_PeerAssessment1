@@ -13,7 +13,7 @@ output:
 ```{r pre_libs, echo=FALSE, results="hide"}
 ################################################################################
 #
-#  Hi!
+#  Hi classmate!
 #
 #  These blocks of commands are executed behind the curtain despite the 
 #  explicit requirement to use echo=TRUE in the assignment instructions.  
@@ -24,7 +24,7 @@ output:
 #  Please pay attention that the research remains reproducible as all the 
 #  necessary code blocks remain in both .md and .html files.
 #
-#  Thanks for understanding!
+#  And sorry in advance for my poor English.
 #
 ################################################################################
 
@@ -120,10 +120,13 @@ dt <- mutate(
   )
 ```
 
-
+So finally we have the following dataset:
+```{r}
+str(dt)
+```
 
 ## What is mean total number of steps taken per day?
-In order to answer this question we need to aggregate the data by `date` and calculate total number of steps per day. Then we calculate total number of steps per day and exclude `NA` values.
+In order to answer this question we have to aggregate the data by date and calculate total number of steps per day. We will also exclude `NA` values during the transformation. The dataset for this question will be stored in the `dt.daily` variable: 
 
 ```{r q1_data}
 dt.daily <- dt                     %>%
@@ -132,51 +135,68 @@ dt.daily <- dt                     %>%
   summarise(value=sum(steps))      
 ```
 
-Here's a histogram for the daily totals:  
+Now let's build a histogram for the daily totals. We will use ggplot plotting system:
 ```{r q1_hist, echo=TRUE, results='asis'}
-  # build the plot
-  g1 <- ggplot(dt.daily, aes(x=value)) 
+# build the plot
+g1 <- ggplot(dt.daily, aes(x=value)) 
 
-  # draw the histogram
-  g1 <- g1 + geom_histogram(binwidth=1000, fill="steelblue", color="transparent")
-  
-  # X-axis adjustments
-  g1 <- g1 + xlab("Number of steps per day") 
-  g1 <- g1 + scale_x_continuous(breaks=seq(0,21000, by=1000), limits=c(0,21000)) 
-  g1 <- g1 + theme(axis.text.x = element_text(angle=60, hjust= 1))
+# draw the histogram
+g1 <- g1 + geom_histogram(binwidth=1000, fill="steelblue", color="white", alpha=9/13)
 
-  # Y-label adjustments
-  g1 <- g1 + ylab("Number of days")
-  g1 <- g1 + scale_y_continuous(breaks=0:30) 
+# X-axis adjustments
+g1 <- g1 + xlab("Number of steps per day") 
+g1 <- g1 + scale_x_continuous(breaks=seq(0,21000, by=1000), limits=c(0,21000)) 
+g1 <- g1 + theme(axis.text.x = element_text(angle=60, hjust= 1))
 
-  print(g1)
+# Y-axis adjustments
+g1 <- g1 + ylab("Number of days")
+g1 <- g1 + scale_y_continuous(breaks=0:30) 
+
+g1 <- g1 + labs(list(title="Mean total number of steps per day"))
+
+# draw the plot
+print(g1)
 ```
 
-```{r q1_vars,echo=FALSE}
-  q1_mean   <- sprintf("%.2f",mean(dt.daily$value))
-  q1_median <- median(dt.daily$value)
+The histogram shows that the mean total number of steps per day is about 10000-11000. If we calculate the value, we scan see that it is really so:
+```{r q1_mean}
+mean(dt.daily$value)
+median(dt.daily$value)
 ```
 
-Mean total number of steps per day equals **`r q1_mean`**, median equals **`r q1_median`**.
+
 
 ## What is the average daily activity pattern?
-In order to determine the daily activity pattern we have to we have to calculate the mean total steps over all teh dates grouped by time interval:
+In order to determine the daily activity pattern we have to group the data by a time interval and calculate mean numer of steps for each interval. As each interval contains 5 minutes, we can calculte per minute values by dividing the mean by 5. Really, per minute values make more sence. We will store the data in `dt.timely` variable:
 
-```{r q2_data}
-dt.timely.total <- dt             %>%
+```{r q2_data,results='asis'}
+dt.timely <- dt                   %>%
   na.omit()                       %>%
-  group_by(hour)                  %>%
-  summarise(value=mean(steps))     %>%
-  select(hour,value)                
+  group_by(interval)              %>%
+  summarise(value=mean(steps)/5)
 ```
 
 
-Here we build the plot:
-```{r Q2_plot}
-  ggplot(dt.timely.total, aes(x=hour, y=value)) +
-    geom_point() +
-    geom_smooth(aes(group=1),method="loess") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+Now we can buid a plot showing the daily activity pattern:
+```{r q2_plot}
+# construct the plot
+g2 <- ggplot(dt.timely, aes(x=interval, y=value)) 
+
+# draw a line
+g2 <- g2 + geom_line(aes(group=1), color="steelblue", lwd=1) 
+
+# adjust X-axis
+g2 <- g2 + xlab("Time interval") 
+g2 <- g2 + scale_x_discrete(breaks=unique(dt$hour)) 
+g2 <- g2 + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+# Y-axis adjustments
+g2 <- g2 + ylab("Mean number of steps per minute")
+
+g2 <- g2 + labs(list(title="Average daily activity pattern"))
+
+# draw the plot
+print(g2)
 ```
 
 ## Imputing missing values

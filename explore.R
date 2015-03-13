@@ -25,26 +25,25 @@ dt <- mutate(
 )
 
 
-dt.daily <- dt                     %>%
-  na.omit()                        %>%
-  group_by(date)                   %>%
-  summarise(value=sum(steps)) 
+dt.timely <- dt                   %>%
+  na.omit()                       %>%
+  group_by(interval)              %>%
+  summarise(value=(mean(steps)/5))
 
-# build the plot
-g1 <- ggplot(dt.daily, aes(x=value)) 
+# construct the plot
+g2 <- ggplot(dt.timely, aes(x=interval, y=value, group=1), main="sd") +
+      labs(list(main="SSS"))
 
-# draw the histogram
-g1 <- g1 + geom_histogram(binwidth=1000, fill="steelblue", color="white", alpha=7/13)
+# draw a line
+g2 <- g2 + geom_line(aes(group=1), lwd=2, color="darkgrey") 
 
-# X-axis adjustments
-g1 <- g1 + xlab("Number of steps per day") 
-g1 <- g1 + scale_x_continuous(breaks=seq(0,21000, by=1000), limits=c(0,21000)) 
-g1 <- g1 + theme(axis.text.x = element_text(angle=60, hjust= 1))
+# adjust X-axis
+g2 <- g2 + xlab("Time interval") 
+g2 <- g2 + scale_x_discrete(breaks=unique(dt$hour)) 
+g2 <- g2 + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-# Y-label adjustments
-g1 <- g1 + ylab("Number of days")
-g1 <- g1 + scale_y_continuous(breaks=0:30) 
+# Y-axis adjustments
+g2 <- g2 + ylab("Mean number of steps per minute")
 
-print(g1)
-
-
+# draw the plot
+print(g2)
