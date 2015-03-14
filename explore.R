@@ -7,11 +7,11 @@ dt <-read.csv("activity.csv", stringsAsFactors=FALSE)
 dt <- mutate(dt, date = ymd(date))
 
 dt <- mutate(
-  dt, 
-  #step 1 - make it 'hhmm'
-  interval = sprintf("%04d", interval),
-  #step 2 - split hours and minutes with a colon
-  interval = paste(substr(interval,1,2),substr(interval,3,4), sep=":")
+  dt,
+  hh       = floor(interval/100),
+  mm       = interval - hh*100,
+  interval = sprintf("%02d:%02d",hh,mm),
+  hh = NULL, mm = NULL
 )
 
 dt <- mutate(
@@ -26,12 +26,25 @@ dt <- mutate(
 )
 
 
-dt.imp <- dt                                                %>%
-  na.omit()                                                 %>%
-  group_by(weekday,interval)                                %>%
-  summarise(avg.value=mean(steps))                          %>%
-  inner_join(dt, by=c("interval", "weekday"))               %>%
-  transform(steps = ifelse(is.na(steps), avg.value, steps)))
+dt.timely <- dt                    %>%
+  na.omit()                        %>%
+  group_by(interval)               %>%
+  summarise(value=mean(steps))
 
-dt2[is.na(dt2$steps),]
+
+sum(is.na(dt$steps))
+
+wday(unique(dt[is.na(dt$steps),]$date), label=TRUE)
+
+
+
+dt.imp <- dt                                                %>%
+  inner_join(dt.timely, by=c("interval"))                   %>%
+  mutate(steps2 = ifelse(is.na(steps), value, steps))       
+
+
+ggplot(dt.timely) + geom_line(aes(x=interval, y=steps,group=1))
+
+
+ggplot(dt.imp) + geom_line(aes(x=interval, y=steps,group=1))
 
