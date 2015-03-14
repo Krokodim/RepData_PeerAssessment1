@@ -26,25 +26,27 @@ dt <- mutate(
 )
 
 
-dt.timely <- dt                    %>%
-  na.omit()                        %>%
-  group_by(interval)               %>%
-  summarise(value=mean(steps))
+
 
 
 sum(is.na(dt$steps))
 
-wday(unique(dt[is.na(dt$steps),]$date), label=TRUE)
+unique(dt[is.na(dt$steps),]$date)
 
 
 
 dt.imp <- dt                                                %>%
   inner_join(dt.timely, by=c("interval"))                   %>%
-  mutate(steps2 = ifelse(is.na(steps), value, steps))       
+  mutate(steps = ifelse(is.na(steps), value, steps))     
 
+dt.timely <- dt.imp                %>%
+  na.omit()                        %>%
+  group_by(interval)               %>%
+  summarise(value=mean(steps))
 
-ggplot(dt.timely) + geom_line(aes(x=interval, y=steps,group=1))
+ggplot(dt.timely) + geom_line(aes(x=interval, y=value,group=1))
 
+ggplot(dt.timely) + geom_histogram(aes(x=value))
 
 ggplot(dt.imp) + geom_line(aes(x=interval, y=steps,group=1))
 
