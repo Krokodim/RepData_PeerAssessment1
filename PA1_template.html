@@ -66,7 +66,7 @@ library(ggplot2)    # an implementation of the Grammar of Graphics</code></pre>
 </div>
 <div id="loading-and-preprocessing-the-data" class="section level2">
 <h2>Loading and preprocessing the data</h2>
-<p>The source data is stored in the <em>activity.csv</em> file in the working directory. If the file is missing by the time the script starts, it is donloaded from the WEB (this is done behind the curtain).</p>
+<p>The source data is stored in the <em>activity.csv</em> file in the working directory. If the file is missing by the time the script starts, it is donloaded from the WEB (this is done behind the curtain, please see the .rmd file).</p>
 <p>The raw data from the file is read into the <code>dt</code> variable:</p>
 <pre class="r"><code>dt &lt;-read.csv(&quot;activity.csv&quot;, sep=&quot;,&quot;, stringsAsFactors=FALSE)</code></pre>
 <p>Right after loading the file we perform some minor transformations:</p>

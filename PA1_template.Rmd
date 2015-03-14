@@ -70,7 +70,7 @@ library(ggplot2)    # an implementation of the Grammar of Graphics
 If some of these packages are missing, you have first to install them using <code>install.packages()</code> function.  
 
 ## Loading and preprocessing the data
-The source data is stored in the *activity.csv* file in the working directory. If the file is missing by the time the script starts, it is donloaded from the WEB (this is done behind the curtain).  
+The source data is stored in the *activity.csv* file in the working directory. If the file is missing by the time the script starts, it is donloaded from the WEB (this is done behind the curtain, please see the .rmd file for details).  
 
 The raw data from the file is read into the `dt` variable:
 ```{r file.read}
